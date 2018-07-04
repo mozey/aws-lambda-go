@@ -1,7 +1,6 @@
 # [aws-lambda-go](https://github.com/aws/aws-lambda-go)
 
-Notes about working with AWS Lambda functions written in Golang,
-and many examples of interfacing with other services
+Notes about working with AWS Lambda functions written in Golang
 
 
 # [Programming model](https://docs.aws.amazon.com/lambda/latest/dg/go-programming-model.html)
@@ -25,8 +24,6 @@ AWS isn’t simply just running your go binary every time a function is invoked,
 dependencies load up front so they are warm if your fn is called repeatedly
 
 
-
-
 # [apex/gateway](https://github.com/apex/gateway)
 
 provides a drop-in replacement for net/http's ListenAndServe 
@@ -37,23 +34,21 @@ Inspired by
 [aws-sam-golang-example](https://github.com/cpliakas/aws-sam-golang-example)
 
 Example
-```
-cd $GOPATH/src/github.com/mozey/aws-lambda-go/examples/gateway
-# net/http
-env APEX_GATEWAY_DISABLED=true go run main.go
-http localhost:3000
-http "localhost:3000/foo?foo=oof"
-# gateway
-GOOS=linux go build -o main && sam local start-api
-```
+
+    cd $GOPATH/src/github.com/mozey/aws-lambda-go/examples/gateway
+    # net/http
+    env APEX_GATEWAY_DISABLED=true go run main.go
+    http localhost:3000
+    http "localhost:3000/foo?foo=oof"
+    # gateway
+    GOOS=linux go build -o main && sam local start-api```
 
 Deploy to lambda
-```
-# Package SAM template
-sam package --template-file ./template.yml --s3-bucket mozey --output-template-file packaged.yaml
-# Deploy packaged SAM template
-sam deploy --template-file ./packaged.yaml --stack-name mozey --capabilities CAPABILITY_IAM
-```
+
+    # Package SAM template
+    sam package --template-file ./template.yml --s3-bucket mozey --output-template-file packaged.yaml
+    # Deploy packaged SAM template
+    sam deploy --template-file ./packaged.yaml --stack-name mozey --capabilities CAPABILITY_IAM
 
 APIGatewayProxyRequestContext contains the information to identify the 
 AWS account and resources invoking the Lambda function. 
@@ -69,15 +64,25 @@ not yet supported with SAM
 
 # [Live Demos](https://eventdrivenapps.com/#livedemos)
 
-Dynamic Serverless Website, Authentication, etc
+[AWS lambda in action](https://www.manning.com/books/aws-lambda-in-action)
+
+Dynamic Serverless Website, 
+[Authentication](https://github.com/danilop/AWS_Lambda_in_Action/tree/master/Chapter09/SampleAuth)
 
 
 # Code layout
 
-https://github.com/golang/go/wiki/GitHubCodeLayout
+[GitHubCodeLayout](https://github.com/golang/go/wiki/GitHubCodeLayout)
 
-https://github.com/golang-standards/project-layout
+[golang-standards/project-layout](https://github.com/golang-standards/project-layout)
 
+
+# Local AWS for dev
+
+Instructions to setup AWS services locally with usage examples
+[aws-local](https://github.com/mozey/aws-local)
+
+    
 
 
 
