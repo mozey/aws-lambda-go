@@ -41,7 +41,7 @@ Example
     http localhost:3000
     http "localhost:3000/foo?foo=oof"
     # gateway
-    GOOS=linux go build -o main && sam local start-api```
+    GOOS=linux go build -o main && sam local start-api
 
 Deploy to lambda
 

@@ -1,2 +1,5 @@
 /.idea
 /examples/gateway/main
+
+examples/minimal-docker/ca-certificates.crt
+examples/minimal-docker/main
