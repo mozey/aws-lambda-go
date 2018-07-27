@@ -1,5 +1,9 @@
 /.idea
 /examples/gateway/main
 
-examples/minimal-docker/ca-certificates.crt
-examples/minimal-docker/main
+*.out
+
+examples/minimal-docker/curl/ca-certificates.crt
+examples/minimal-docker/https/localhost.crt
+examples/minimal-docker/https/localhost.key
+
