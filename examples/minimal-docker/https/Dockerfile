@@ -2,5 +2,6 @@ FROM scratch
 ADD localhost.crt /
 ADD localhost.key /
 ADD main.out /
-CMD ["/main.out", "-certs", "/"]
+COPY data/ /data/
+CMD ["/main.out", "-certs", "/", "-dataDir", "/data"]
 

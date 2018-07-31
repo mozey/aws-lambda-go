@@ -42,11 +42,12 @@ uses [vfsgen](https://github.com/shurcooL/vfsgen)
     printf "[dn]\nCN=localhost\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
 
     # Debug
-    go run https/main.go -certs $(pwd)/https &
+    go run https/main.go -certs $(pwd)/https -dataDir $(pwd)/https/data &
     http --verify no https://localhost:8080/mien
+    http --verify no https://localhost:8080/data/foo.html
     
     go build -o ./https/main.out ./https
-    ./https/main.out -certs $(pwd)/https
+    ./https/main.out -certs $(pwd)/https -dataDir $(pwd)/https/data
 
     # Linux executable
     CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ./https/main.out ./https
@@ -60,3 +61,4 @@ uses [vfsgen](https://github.com/shurcooL/vfsgen)
     docker run -d -it --rm -p 8080:8080 --name md-https md-https
     
     http --verify no https://localhost:8080/mienchon
+    http --verify no https://localhost:8080/data/foo.html
