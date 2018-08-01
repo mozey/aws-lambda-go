@@ -2,6 +2,16 @@
 
 Notes and examples about AWS Lambda functions written in Golang
 
+[jq](https://stedolan.github.io/jq/) can extract values from AWS CLI commands
+assuming output is set to json, for example
+
+    aws sts get-caller-identity | jq .Account
+
+Examples will usually set env vars with prefix "AWS_" 
+for use as params to AWS CLI, to see current values run 
+
+    printenv | grep AWS_    
+    
 
 # Local AWS for dev
 
