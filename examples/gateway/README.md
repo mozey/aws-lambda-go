@@ -4,21 +4,24 @@ provides a drop-in replacement for net/http's ListenAndServe
 for use in AWS Lambda & API Gateway, 
 simply swap it out for gateway.ListenAndServe
 
+Layout follows [go project layout](https://medium.com/golang-learn/go-project-layout-e5213cdcfaa2)
+and [github here](https://github.com/golang-standards/project-layout)
+
 Inspired by 
 [aws-sam-golang-example](https://github.com/cpliakas/aws-sam-golang-example)
 
 Example
 
-    cd $GOPATH/src/github.com/mozey/aws-lambda-go/examples/gateway
+    cd ${GOPATH}/src/github.com/mozey/aws-lambda-go/examples/gateway
     
     # net/http
-    env APEX_GATEWAY_DISABLED=true go run main.go
-    
-    http localhost:3000
-    http "localhost:3000/foo?foo=oof"
+    go run ./cmd/http/http.go &
+    http localhost:8080
+    http "localhost:8080/foo?foo=foo"
     
     # gateway
-    GOOS=linux go build -o main && sam local start-api
+    GOOS=linux go build -o main ./cmd/gateway && sam local start-api -p 8080
+    # TODO Credentials store error 
 
 Deploy to lambda
 
