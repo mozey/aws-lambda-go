@@ -8,13 +8,26 @@ set -eu
 # return code of the whole pipeline.
 bash -c 'set -o pipefail'
 
-# Delete lambda fn
-AWS_FN_NAME=${AWS_FN_NAME}
-# TODO
+export AWS_FN_NAME="aws-lambda-go-examples-books-api"
 
-# Delete API
-AWS_API_NAME=${AWS_API_NAME}
-AWS_API_ID=$(aws apigateway get-rest-apis | \
-jq -r ".items[]  | select(.name == \"${AWS_API_NAME}\") | .id")
-echo "Deleting rest-api-id ${AWS_API_ID}"
-aws apigateway delete-rest-api --rest-api-id ${AWS_API_ID}
+read -p "Reset ${AWS_FN_NAME} (y)? " -n 1 -r
+echo    # move to a new line
+if [[ ${REPLY} =~ ^[Yy]$ ]]
+then
+    # Delete lambda fn
+    echo "Deleting lambda fn"
+    aws lambda delete-function --function-name ${AWS_FN_NAME}
+
+    # Delete API
+    export AWS_API_NAME=${AWS_API_NAME}
+    export AWS_API_ID=$(aws apigateway get-rest-apis | \
+    jq -r ".items[]  | select(.name == \"${AWS_API_NAME}\") | .id")
+    echo "Deleting rest-api-id ${AWS_API_ID}"
+    aws apigateway delete-rest-api --rest-api-id ${AWS_API_ID}
+
+    echo "Done"
+
+else
+    echo "Abort"
+fi
+
