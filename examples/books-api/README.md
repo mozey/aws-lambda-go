@@ -138,4 +138,8 @@ Deploying the API and invoke
     export AWS_ENDPOINT=https://${AWS_API_ID}.execute-api.${AWS_REGION}.amazonaws.com/${AWS_STAGE_NAME}
     http ${AWS_ENDPOINT}/books?isbn=${AWS_ISBN}
     
+Custom domain
+    
+    
+    
 TODO Supporting multiple actions

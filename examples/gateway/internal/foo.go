@@ -17,8 +17,8 @@ func Foo(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(msg)
 		return
 	}
-	//msg := Message{fmt.Sprintf("%v bar", fooParams[0])}
-	msg := Message{fmt.Sprintf("%v bar", fooParam)}
+	//msg := Message{fmt.Sprintf("%v bar", fooParam)}
+	msg := Message{fmt.Sprintf("%v baz", fooParam)}
 	json.NewEncoder(w).Encode(msg)
 }
 

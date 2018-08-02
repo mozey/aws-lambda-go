@@ -2,7 +2,7 @@ package internal
 
 import "net/http"
 
-func Init() {
+func InitRoutes() {
 	http.HandleFunc("/", Root)
 	http.HandleFunc("/foo", Foo)
 }

@@ -8,8 +8,10 @@
 examples/minimal-docker/curl/ca-certificates.crt
 examples/minimal-docker/https/localhost.crt
 examples/minimal-docker/https/localhost.key
-examples/minimal-docker/vfsgen/data/assets_vfsdata.go
 
 _excluded
 examples/books-api/main.zip
 examples/books-api/output.json
+examples/gateway/endpoint.txt
+examples/gateway/build/main.zip
+
