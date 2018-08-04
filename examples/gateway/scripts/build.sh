@@ -1,14 +1,44 @@
 #!/usr/bin/env bash
 
-GOPATH=${GOPATH}
-export AWS_DIR=${GOPATH}/src/github.com/mozey/aws-lambda-go/examples/gateway
+# Set (e) exit on error
+# Set (u) no-unset to exit on undefined variable
+set -eu
+# If any command in a pipeline fails,
+# that return code will be used as the
+# return code of the whole pipeline.
+bash -c 'set -o pipefail'
+
+EXPECTED_ARGS=2
+E_BADARGS=100
+
+if [ $# -ne ${EXPECTED_ARGS} ]
+then
+    echo "Build the lambda fn handler"
+    echo ""
+    echo "Usage:"
+    echo "  ./script/`basename $0` APP_DIR APP_HANDLER"
+    echo ""
+    exit ${E_BADARGS}
+fi
+
+APP_DIR="$1"
+APP_HANDLER="$2"
 
 echo "Building exe"
-cd ${AWS_DIR}
+cd ${APP_DIR}
 env GOOS=linux GOARCH=amd64 go build \
--o build/gateway.out \
+-o build/${APP_HANDLER} \
 ./cmd/gateway
 
-zip -j ${AWS_DIR}/build/main.zip ${AWS_DIR}/build/gateway.out
+echo "Delete old build"
+# Release could be set to git tag...
+RELEASE=""
+NAME="main${RELEASE}.zip"
+rm -f ${APP_DIR}/build/${NAME}
 
-unzip -vl ${AWS_DIR}/build/main.zip
+echo "Zip new build"
+zip -j ${APP_DIR}/build/${NAME} ${APP_DIR}/build/${APP_HANDLER}
+# Add more build artifacts here...
+
+echo "List zip contents"
+unzip -vl ${APP_DIR}/build/${NAME}

@@ -12,6 +12,6 @@ examples/minimal-docker/https/localhost.key
 _excluded
 examples/books-api/main.zip
 examples/books-api/output.json
-examples/gateway/endpoint.txt
 examples/gateway/build/main.zip
-
+examples/gateway/config.json
+examples/gateway/config
