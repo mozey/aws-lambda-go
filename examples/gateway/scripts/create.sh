@@ -8,22 +8,26 @@ set -eu
 # return code of the whole pipeline.
 bash -c 'set -o pipefail'
 
-EXPECTED_ARGS=3
 E_BADARGS=100
 
-if [ $# -ne ${EXPECTED_ARGS} ]
+APP_DIR=${APP_DIR}
+if [ "${APP_DIR}" = "" ]
 then
-    echo "Create the lambda fn and API"
-    echo ""
-    echo "Usage:"
-    echo "  ./script/`basename $0` APP_DIR APP_FN_NAME APP_HANDLER"
-    echo ""
+    echo "Invalid APP_DIR"
     exit ${E_BADARGS}
 fi
-
-APP_DIR="$1"
-APP_FN_NAME="$2"
-APP_HANDLER="$3"
+APP_FN_NAME=${APP_FN_NAME}
+if [ "${APP_FN_NAME}" = "" ]
+then
+    echo "Invalid APP_FN_NAME"
+    exit ${E_BADARGS}
+fi
+APP_HANDLER=${APP_HANDLER}
+if [ "${APP_HANDLER}" = "" ]
+then
+    echo "Invalid APP_HANDLER"
+    exit ${E_BADARGS}
+fi
 
 # Lambda fn.....................................................................
 

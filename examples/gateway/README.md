@@ -44,7 +44,6 @@ it is used to derive `APP_DIR`
 
     # Init
     export AWS_PROFILE=mozey
-    export APP_DEBUG=true
     export APP_CONFIG=$(pwd)/config.json
     cp ./config.sample.json ./config.json
     
@@ -60,11 +59,11 @@ Print env
     
 Build the exe
 
-    ./scripts/build.sh ${APP_DIR} ${APP_HANDLER}
+    ./scripts/build.sh
 
 Create lambda fn and API
 
-    ./scripts/create.sh ${APP_DIR} ${APP_FN_NAME} ${APP_HANDLER}
+    ./scripts/create.sh
     $(./config) 
     
 Test
@@ -74,24 +73,28 @@ Test
 
 # Deploy to update the lambda fn
     
-    ./scripts/deploy.sh ${APP_DIR} ${APP_FN_NAME}
+    ./scripts/deploy.sh
 
     
 # Delete lambda fn and API
 
-    ./scripts/reset.sh ${APP_DIR} ${APP_FN_NAME}
+    ./scripts/reset.sh
 
 
 # Custom domain
     
-Add custom domain that invokes the API,
+Add a custom domain to invoke the lambda fn via API gateway,
 all request methods and paths are forwarded to the lambda fn
     
-    export APP_ENDPOINT_CUSTOM=api.example.com
+    ./config -key APP_ENDPOINT_CUSTOM -value api.mozey.co \
+    -key APP_DOMAIN -value mozey.co\
+    -update
     
-    ./scripts/domain.sh ${APP_ENDPOINT_CUSTOM}
-    # Update config
-    ./config -key APP_ENDPOINT_CUSTOM -value ${APP_ENDPOINT_CUSTOM}
+    $(./config)
+    
+    ./scripts/domain.sh
+    
+    http ${APP_ENDPOINT_CUSTOM}/foo?foo=foo
 
 
 # Caller id

@@ -8,21 +8,20 @@ set -eu
 # return code of the whole pipeline.
 bash -c 'set -o pipefail'
 
-EXPECTED_ARGS=2
 E_BADARGS=100
 
-if [ $# -ne ${EXPECTED_ARGS} ]
+APP_DIR=${APP_DIR}
+if [ "${APP_DIR}" = "" ]
 then
-    echo "Build the lambda fn handler"
-    echo ""
-    echo "Usage:"
-    echo "  ./script/`basename $0` APP_DIR APP_HANDLER"
-    echo ""
+    echo "Invalid APP_DIR"
     exit ${E_BADARGS}
 fi
-
-APP_DIR="$1"
-APP_HANDLER="$2"
+APP_HANDLER=${APP_HANDLER}
+if [ "${APP_HANDLER}" = "" ]
+then
+    echo "Invalid APP_HANDLER"
+    exit ${E_BADARGS}
+fi
 
 echo "Building exe"
 cd ${APP_DIR}

@@ -8,21 +8,20 @@ set -eu
 # return code of the whole pipeline.
 bash -c 'set -o pipefail'
 
-EXPECTED_ARGS=2
 E_BADARGS=100
 
-if [ $# -ne ${EXPECTED_ARGS} ]
+APP_DIR=${APP_DIR}
+if [ "${APP_DIR}" = "" ]
 then
-    echo "Delete lambda fn and API"
-    echo ""
-    echo "Usage:"
-    echo "  ./script/`basename $0` APP_DIR APP_FN_NAME"
-    echo ""
+    echo "Invalid APP_DIR"
     exit ${E_BADARGS}
 fi
-
-APP_DIR="$1"
-APP_FN_NAME="$2"
+APP_FN_NAME=${APP_FN_NAME}
+if [ "${APP_FN_NAME}" = "" ]
+then
+    echo "Invalid APP_FN_NAME"
+    exit ${E_BADARGS}
+fi
 
 read -p "Delete lambda fn and API ${APP_FN_NAME} (y)? " -n 1 -r
 echo ""
@@ -32,7 +31,7 @@ then
     # Other managed/inline policies to detach/delete?
     APP_POLICY_ARN=$(aws iam list-attached-role-policies \
     --role-name ${APP_FN_NAME} | \
-    jq -r ".AttachedPolicies[]  | select(.PolicyName == \"AWSLambdaBasicExecutionRole\") | .PolicyArn") \
+    jq -r ".AttachedPolicies[] | select(.PolicyName == \"AWSLambdaBasicExecutionRole\") | .PolicyArn") \
     || APP_POLICY_ARN=""
     if [ "${APP_POLICY_ARN}" != "" ]
     then

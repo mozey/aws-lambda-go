@@ -15,3 +15,4 @@ examples/books-api/output.json
 examples/gateway/build/main.zip
 examples/gateway/config.json
 examples/gateway/config
+examples/gateway/change-resource-record-sets.json
