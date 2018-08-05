@@ -22,16 +22,19 @@ then
     echo "Invalid APP_FN_NAME"
     exit ${E_BADARGS}
 fi
-APP_ENDPOINT_CUSTOM=${APP_ENDPOINT_CUSTOM}
-if [ "${APP_ENDPOINT_CUSTOM}" = "" ]
+
+APP_API_PATH=${APP_API_PATH}
+
+APP_API_CUSTOM=${APP_API_CUSTOM}
+if [ "${APP_API_CUSTOM}" = "" ]
 then
-    echo "Invalid APP_ENDPOINT_CUSTOM"
+    echo "Invalid APP_API_CUSTOM"
     exit ${E_BADARGS}
 fi
-APP_DOMAIN=${APP_DOMAIN}
-if [ "${APP_DOMAIN}" = "" ]
+APP_API_DOMAIN=${APP_API_DOMAIN}
+if [ "${APP_API_DOMAIN}" = "" ]
 then
-    echo "Invalid APP_DOMAIN"
+    echo "Invalid APP_API_DOMAIN"
     exit ${E_BADARGS}
 fi
 APP_REGION=${APP_REGION}
@@ -40,50 +43,54 @@ then
     echo "Invalid APP_REGION"
     exit ${E_BADARGS}
 fi
-APP_API_ID=${APP_API_ID}
-if [ "${APP_API_ID}" = "" ]
+APP_API=${APP_API}
+if [ "${APP_API}" = "" ]
 then
-    echo "Invalid APP_API_ID"
+    echo "Invalid APP_API"
     exit ${E_BADARGS}
 fi
-APP_STAGE_NAME=${APP_STAGE_NAME}
-if [ "${APP_STAGE_NAME}" = "" ]
+APP_API_STAGE_NAME=${APP_API_STAGE_NAME}
+if [ "${APP_API_STAGE_NAME}" = "" ]
 then
-    echo "Invalid APP_STAGE_NAME"
+    echo "Invalid APP_API_STAGE_NAME"
     exit ${E_BADARGS}
 fi
 
 # ..............................................................................
-APP_CERT_ARN=$(aws acm list-certificates | \
-jq -r ".CertificateSummaryList[] | select(.DomainName == \"${APP_ENDPOINT_CUSTOM}\") | .CertificateArn")
+# WARNING 2018-08-05 `aws apigateway create-domain-name` will fail with
+# "Certificate must be in 'us-east-1'" for certs requested in a different region
+CERT_REGION=us-east-1
+
+APP_CERT_ARN=$(aws acm list-certificates --region ${CERT_REGION} | \
+jq -r ".CertificateSummaryList[] | select(.DomainName == \"${APP_API_CUSTOM}\") | .CertificateArn")
 if [ "${APP_CERT_ARN}" = "" ]
 then
-    echo "Requesting cert for ${APP_ENDPOINT_CUSTOM}"
+    echo "Requesting cert for ${APP_API_CUSTOM}"
     echo ""
     aws acm request-certificate \
-    --region ${APP_REGION} \
-    --domain-name ${APP_ENDPOINT_CUSTOM} --validation-method DNS
-    APP_CERT_ARN=$(aws acm list-certificates | \
-    jq -r ".CertificateSummaryList[] | select(.DomainName == \"${APP_ENDPOINT_CUSTOM}\") | .CertificateArn")
+    --region ${CERT_REGION} \
+    --domain-name ${APP_API_CUSTOM} --validation-method DNS
+    APP_CERT_ARN=$(aws acm list-certificates --region ${CERT_REGION} | \
+    jq -r ".CertificateSummaryList[] | select(.DomainName == \"${APP_API_CUSTOM}\") | .CertificateArn")
 fi
 
 # ..............................................................................
 
-APP_DNS_VALIDATION=$(aws acm describe-certificate \
+DNS_VALIDATION=$(aws acm describe-certificate --region ${CERT_REGION} \
 --certificate-arn ${APP_CERT_ARN} | \
 jq -r .Certificate.DomainValidationOptions[0].ResourceRecord)
-APP_VALIDATION_CNAME=$(echo ${APP_DNS_VALIDATION} | jq -r .Name)
-APP_VALIDATION_VALUE=$(echo ${APP_DNS_VALIDATION} | jq -r .Value)
-APP_HOSTED_ZONE=$(aws route53 list-hosted-zones | \
-jq -r ".HostedZones[] | select(.Name == \"${APP_DOMAIN}.\") | .Id")
-if [ "${APP_HOSTED_ZONE}" = "" ]
+DNS_VALIDATION_CNAME=$(echo ${DNS_VALIDATION} | jq -r .Name)
+DNS_VALIDATION_VALUE=$(echo ${DNS_VALIDATION} | jq -r .Value)
+APP_DNS_HOSTED_ZONE=$(aws route53 list-hosted-zones | \
+jq -r ".HostedZones[] | select(.Name == \"${APP_API_DOMAIN}.\") | .Id")
+if [ "${APP_DNS_HOSTED_ZONE}" = "" ]
 then
-    echo "Invalid APP_HOSTED_ZONE"
+    echo "Invalid APP_API_DOMAIN: no matching hosted zones"
     exit ${E_BADARGS}
 fi
 
-CREATE_CNAME=$(aws route53 list-resource-record-sets --hosted-zone-id ${APP_HOSTED_ZONE} | \
-jq -r ".ResourceRecordSets[] | select(.Name == \"${APP_VALIDATION_CNAME}\") | .Name")
+CREATE_CNAME=$(aws route53 list-resource-record-sets --hosted-zone-id ${APP_DNS_HOSTED_ZONE} | \
+jq -r ".ResourceRecordSets[] | select(.Name == \"${DNS_VALIDATION_CNAME}\") | .Name")
 if [ "${CREATE_CNAME}" = "" ]
 then
     echo "Creating CNAME record for DSN validation"
@@ -95,12 +102,12 @@ then
             {
                 \"Action\": \"CREATE\",
                 \"ResourceRecordSet\": {
-                    \"Name\": \"${APP_VALIDATION_CNAME}\",
+                    \"Name\": \"${DNS_VALIDATION_CNAME}\",
                     \"Type\": \"CNAME\",
                     \"TTL\": 300,
                     \"ResourceRecords\": [
                         {
-                            \"Value\": \"${APP_VALIDATION_VALUE}\"
+                            \"Value\": \"${DNS_VALIDATION_VALUE}\"
                         }
                     ]
                 }
@@ -108,44 +115,93 @@ then
         ]
     }
     " > ${APP_DIR}/change-resource-record-sets.json
-    aws route53 change-resource-record-sets --hosted-zone-id ${APP_HOSTED_ZONE} \
+    aws route53 change-resource-record-sets --hosted-zone-id ${APP_DNS_HOSTED_ZONE} \
     --change-batch file://${APP_DIR}/change-resource-record-sets.json
 fi
 
 # ..............................................................................
 echo "Check cert status"
 echo ""
-APP_CERT_STATUS=$(aws acm describe-certificate \
+APP_CERT_STATUS=$(aws acm describe-certificate --region ${CERT_REGION} \
 --certificate-arn ${APP_CERT_ARN} | \
 jq -r .Certificate.Status)
-# TODO What is the correct verified status?
-if [ "${APP_CERT_STATUS}" != "VERIFIED" ]
+if [ "${APP_CERT_STATUS}" != "ISSUED" ]
 then
     echo "Invalid APP_CERT_STATUS ${APP_CERT_STATUS}"
+    echo "It might take a while for validation to complete"
+    echo ""
     exit ${E_BADARGS}
 fi
+echo "Certificate is verified"
 
 # ..............................................................................
 echo "Create API domain"
 echo ""
 aws apigateway create-domain-name \
---domain-name ${APP_ENDPOINT_CUSTOM} \
---certificate-name ${APP_ENDPOINT_CUSTOM} \
+--domain-name ${APP_API_CUSTOM} \
+--certificate-name ${APP_API_CUSTOM} \
 --region ${APP_REGION} \
 --certificate-arn ${APP_CERT_ARN}
+APP_API_TARGET=$(aws apigateway get-domain-name \
+--domain-name ${APP_API_CUSTOM} | \
+jq -r .distributionDomainName)
 
-# ..............................................................................
+## ..............................................................................
 echo "Create API path mapping"
 echo ""
-aws apigateway create-base-path-mapping \
---domain-name ${APP_ENDPOINT_CUSTOM} \
---rest-api-id ${APP_API_ID} \
---stage ${APP_STAGE_NAME} \
---region ${APP_REGION}
+if [ "${APP_API_PATH}" != "" ]
+then
+    aws apigateway create-base-path-mapping \
+    --base-path ${APP_API_PATH} \
+    --domain-name ${APP_API_CUSTOM} \
+    --rest-api-id ${APP_API} \
+    --stage ${APP_API_STAGE_NAME} \
+    --region ${APP_REGION}
+else
+    aws apigateway create-base-path-mapping \
+    --domain-name ${APP_API_CUSTOM} \
+    --rest-api-id ${APP_API} \
+    --stage ${APP_API_STAGE_NAME} \
+    --region ${APP_REGION}
+fi
+APP_API_CUSTOM_ENDPOINT="https://${APP_API_CUSTOM}${APP_API_PATH}"
 
 # ..............................................................................
-echo "Update config"
-echo ""
+CREATE_CNAME=$(aws route53 list-resource-record-sets --hosted-zone-id ${APP_DNS_HOSTED_ZONE} | \
+jq -r ".ResourceRecordSets[] | select(.Name == \"${APP_API_CUSTOM}.\") | .Name")
+if [ "${CREATE_CNAME}" = "" ]
+then
+    echo "Creating CNAME record for ${APP_API_CUSTOM}"
+    echo ""
+    echo "
+    {
+        \"Comment\": \"Custom domain for lambda fn ${APP_FN_NAME}\",
+        \"Changes\": [
+            {
+                \"Action\": \"CREATE\",
+                \"ResourceRecordSet\": {
+                    \"Name\": \"${APP_API_CUSTOM}\",
+                    \"Type\": \"CNAME\",
+                    \"TTL\": 300,
+                    \"ResourceRecords\": [
+                        {
+                            \"Value\": \"${APP_API_TARGET}\"
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+    " > ${APP_DIR}/change-resource-record-sets.json
+    aws route53 change-resource-record-sets --hosted-zone-id ${APP_DNS_HOSTED_ZONE} \
+    --change-batch file://${APP_DIR}/change-resource-record-sets.json
+fi
+
+# ..............................................................................
+
 ${APP_DIR}/config \
 -key "APP_CERT_ARN" -value "${APP_CERT_ARN}" \
+-key "APP_API_CUSTOM_ENDPOINT" -value "${APP_API_CUSTOM_ENDPOINT}" \
+-key "APP_DNS_HOSTED_ZONE" -value "${APP_DNS_HOSTED_ZONE}" \
 -update
+

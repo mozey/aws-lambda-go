@@ -22,36 +22,36 @@ non-persistent disk space in its own /tmp directory..."
 
 # Run locally for dev
 
-    cd ${GOPATH}/src/github.com/mozey/aws-lambda-go/examples/gateway
+    export APP_DIR=${GOPATH}/src/github.com/mozey/aws-lambda-go/examples/gateway
     
     # net/http
-    go run ./cmd/http/http.go &
+    go run ${APP_DIR}/cmd/http/http.go &
     http localhost:8080
     http "localhost:8080/foo?foo=foo"
     
     
 # Create lambda fn and API
 
-    cd ${GOPATH}/src/github.com/mozey/aws-lambda-go/examples/gateway
+Set application working dir
+
+    export APP_DIR=${GOPATH}/src/github.com/mozey/aws-lambda-go/examples/gateway
  
 Make scripts executable
  
-    chmod u+x ./scripts/*.sh
+    chmod u+x ${APP_DIR}/scripts/*.sh
  
 Set env using `config` cmd.
 The `config.json` file must be in the package root, 
-it is used to derive `APP_DIR`
+for multiple environments use this format `config.APP_CONFIG_ENV.json`.
+[AWS_PROFILE](https://docs.aws.amazon.com/cli/latest/userguide/cli-multiple-profiles.html)
+should be set in `config.json`
 
-    # Init
-    export AWS_PROFILE=mozey
-    export APP_CONFIG=$(pwd)/config.json
-    cp ./config.sample.json ./config.json
+    cp ${APP_DIR}/config.sample.json ${APP_DIR}/config.json
     
-    # Compile config cmd
-    go build -ldflags "-X main.Config=$APP_CONFIG" -o ./config ./scripts/config
+    cd ${APP_DIR}
+    go build -ldflags "-X main.AppDir=${APP_DIR}" -o ./config ./scripts/config
     
-    # Set env
-    $(./config)
+    $(${APP_DIR}/config)
     
 Print env
 
@@ -59,26 +59,27 @@ Print env
     
 Build the exe
 
-    ./scripts/build.sh
+    $(${APP_DIR}/config) && ${APP_DIR}/scripts/build.sh
 
 Create lambda fn and API
 
-    ./scripts/create.sh
-    $(./config) 
+    $(${APP_DIR}/config) && ${APP_DIR}/scripts/create.sh
     
-Test
+Call API
 
-    http ${APP_ENDPOINT}/foo?foo=foo
+    $(${APP_DIR}/config)
+    
+    http ${APP_API_ENDPOINT}/foo?foo=foo
 
 
 # Deploy to update the lambda fn
     
-    ./scripts/deploy.sh
+    $(${APP_DIR}/config) && ${APP_DIR}/scripts/deploy.sh
 
     
 # Delete lambda fn and API
 
-    ./scripts/reset.sh
+    $(${APP_DIR}/config) && ${APP_DIR}/scripts/reset.sh
 
 
 # Custom domain
@@ -86,15 +87,23 @@ Test
 Add a custom domain to invoke the lambda fn via API gateway,
 all request methods and paths are forwarded to the lambda fn
     
-    ./config -key APP_ENDPOINT_CUSTOM -value api.mozey.co \
-    -key APP_DOMAIN -value mozey.co\
+    ${APP_DIR}/config \
+    -key APP_API_PATH -value "" \
+    -key APP_API_CUSTOM -value api.mozey.co \
+    -key APP_API_DOMAIN -value mozey.co \
     -update
     
-    $(./config)
+    $(${APP_DIR}/config) && ${APP_DIR}/scripts/domain.sh
     
-    ./scripts/domain.sh
+Script will print an error message if cert is still validating.
+Wait for certificate validation to complete,
+then run the script again to finish setup
     
-    http ${APP_ENDPOINT_CUSTOM}/foo?foo=foo
+Call API (DNS may take some time to propagate)
+
+    $(${APP_DIR}/config)
+    
+    http ${APP_API_CUSTOM_ENDPOINT}/foo?foo=foo
 
 
 # Caller id

@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"os"
 	"log"
 	"fmt"
 	"encoding/json"
@@ -11,11 +10,15 @@ import (
 	"sort"
 	"github.com/mozey/logutil"
 	"io/ioutil"
+	"os"
 )
 
 type ConfigMap map[string]string
 
-var Config = os.Getenv("APP_CONFIG")
+// AppDir is the application root
+var AppDir string
+// ConfigEnv can be used for multiple deployments
+var ConfigEnv string
 
 type ArgMap []string
 
@@ -34,18 +37,35 @@ var values ArgMap
 func main() {
 	log.SetFlags(log.Lshortfile)
 
+	// If not compiled with ldflags see if APP_DIR is set on env
+	if AppDir == "" {
+		AppDir = os.Getenv("APP_DIR")
+	}
+
+	var config string
+	// If not compiled with ldflags see if APP_CONFIG_ENV is set on env
+	if ConfigEnv == "" {
+		ConfigEnv = os.Getenv("APP_CONFIG_ENV")
+	}
+	// By default only use a single config file
+	if ConfigEnv == "" {
+		config = path.Join(AppDir, "config.json")
+	} else {
+		config = path.Join(AppDir, fmt.Sprintf("config.%v.json", ConfigEnv))
+	}
+
 	flag.Var(&keys, "key", "Set key and print config JSON")
 	flag.Var(&values, "value", "Value for last key specified")
 	update := flag.Bool("update", false, "Update config.json")
 	flag.Parse()
 
-	b, err := ioutil.ReadFile(Config)
+	b, err := ioutil.ReadFile(config)
 	if err != nil {
-		logutil.Debugf("Loading config from: %v", Config)
+		logutil.Debugf("Loading config from: %v", config)
 		log.Panic(err)
 	}
 
-	// The Config file must have a flat key value structure
+	// The config file must have a flat key value structure
 	c := ConfigMap{}
 	err = json.Unmarshal(b, &c)
 	if err != nil {
@@ -59,12 +79,12 @@ func main() {
 	}
 	// Config file must be in app dir
 	configKeys = append(configKeys, "APP_DIR")
-	c["APP_DIR"] = path.Dir(Config)
+	c["APP_DIR"] = path.Dir(config)
 	// Sort
 	sort.Strings(configKeys)
 
 	if len(keys) > 0 {
-		// Set Config key value
+		// Set config key value
 
 		// Validate input
 		for i, key := range keys {
@@ -80,8 +100,9 @@ func main() {
 		// Update config
 		b, _ := json.MarshalIndent(c, "", "    ")
 		if *update {
-			logutil.Debugf("Updating %v", Config)
-			ioutil.WriteFile(Config, b, 0)
+			logutil.Debugf("%v", config)
+			fmt.Println("Config updated")
+			ioutil.WriteFile(config, b, 0)
 		} else {
 			// Print json
 			fmt.Print(string(b))

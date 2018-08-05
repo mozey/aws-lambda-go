@@ -29,15 +29,15 @@ echo ""
 if [[ ${REPLY} =~ ^[Yy]$ ]]
 then
     # Other managed/inline policies to detach/delete?
-    APP_POLICY_ARN=$(aws iam list-attached-role-policies \
+    APP_FN_POLICY_ARN=$(aws iam list-attached-role-policies \
     --role-name ${APP_FN_NAME} | \
     jq -r ".AttachedPolicies[] | select(.PolicyName == \"AWSLambdaBasicExecutionRole\") | .PolicyArn") \
-    || APP_POLICY_ARN=""
-    if [ "${APP_POLICY_ARN}" != "" ]
+    || APP_FN_POLICY_ARN=""
+    if [ "${APP_FN_POLICY_ARN}" != "" ]
     then
-        echo "Detaching policy ${APP_POLICY_ARN}"
+        echo "Detaching policy ${APP_FN_POLICY_ARN}"
         aws iam detach-role-policy --role-name ${APP_FN_NAME} \
-        --policy-arn ${APP_POLICY_ARN}
+        --policy-arn ${APP_FN_POLICY_ARN}
     fi
 
     DELETE_ROLE=1
@@ -57,13 +57,13 @@ then
         aws lambda delete-function --function-name ${APP_FN_NAME}
     fi
 
-    APP_API_ID=$(aws apigateway get-rest-apis | \
+    APP_API=$(aws apigateway get-rest-apis | \
     jq -r ".items[]  | select(.name == \"${APP_FN_NAME}\") | .id") \
-    || APP_API_ID=""
-    if [ "${APP_API_ID}" != "" ]
+    || APP_API=""
+    if [ "${APP_API}" != "" ]
     then
-        echo "Deleting API ${APP_API_ID}"
-        aws apigateway delete-rest-api --rest-api-id ${APP_API_ID}
+        echo "Deleting API ${APP_API}"
+        aws apigateway delete-rest-api --rest-api-id ${APP_API}
     fi
 
     echo "Reset config"

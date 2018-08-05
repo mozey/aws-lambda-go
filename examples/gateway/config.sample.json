@@ -1,6 +1,6 @@
 {
     "APP_DEBUG": "true",
     "APP_FN_NAME": "aws-lambda-go-examples-gateway",
-    "APP_HANDLER": "gateway.out",
+    "APP_FN_HANDLER": "gateway.out",
     "APP_REGION": "eu-west-2"
 }

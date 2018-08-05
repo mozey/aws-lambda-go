@@ -16,17 +16,17 @@ then
     echo "Invalid APP_DIR"
     exit ${E_BADARGS}
 fi
-APP_HANDLER=${APP_HANDLER}
-if [ "${APP_HANDLER}" = "" ]
+APP_FN_HANDLER=${APP_FN_HANDLER}
+if [ "${APP_FN_HANDLER}" = "" ]
 then
-    echo "Invalid APP_HANDLER"
+    echo "Invalid APP_FN_HANDLER"
     exit ${E_BADARGS}
 fi
 
 echo "Building exe"
 cd ${APP_DIR}
 env GOOS=linux GOARCH=amd64 go build \
--o build/${APP_HANDLER} \
+-o build/${APP_FN_HANDLER} \
 ./cmd/gateway
 
 echo "Delete old build"
@@ -36,7 +36,7 @@ NAME="main${RELEASE}.zip"
 rm -f ${APP_DIR}/build/${NAME}
 
 echo "Zip new build"
-zip -j ${APP_DIR}/build/${NAME} ${APP_DIR}/build/${APP_HANDLER}
+zip -j ${APP_DIR}/build/${NAME} ${APP_DIR}/build/${APP_FN_HANDLER}
 # Add more build artifacts here...
 
 echo "List zip contents"
