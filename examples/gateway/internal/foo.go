@@ -10,7 +10,6 @@ import (
 func Foo(w http.ResponseWriter, r *http.Request) {
 	log.Print("foo")
 	fooParam := r.URL.Query().Get("foo")
-	//if fooParams == nil {
 	if fooParam == "" {
 		log.Print("Missing foo")
 		msg := Message{"Missing foo"}

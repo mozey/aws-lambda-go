@@ -51,6 +51,10 @@ should be set in `config.json`
     cd ${APP_DIR}
     go build -ldflags "-X main.AppDir=${APP_DIR}" -o ./config ./scripts/config
     
+    ${APP_DIR}/config \
+    -key APP_REGION -value eu-west-2 \
+    -update
+    
     $(${APP_DIR}/config)
     
 Print env

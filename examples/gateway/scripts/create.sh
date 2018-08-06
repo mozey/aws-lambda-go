@@ -34,6 +34,12 @@ then
     echo "Invalid AWS_PROFILE"
     exit ${E_BADARGS}
 fi
+APP_REGION=${APP_REGION}
+if [ "${APP_REGION}" = "" ]
+then
+    echo "Invalid APP_REGION"
+    exit ${E_BADARGS}
+fi
 
 # Lambda fn.....................................................................
 
@@ -65,34 +71,43 @@ echo ""
 
 APP_API_NAME=${APP_FN_NAME}
 
-APP_API=$(aws apigateway create-rest-api \
---name ${APP_FN_NAME} | jq -r .id)
+APP_API=$(aws apigateway create-rest-api --name ${APP_FN_NAME} | \
+jq -r .id)
 
 # Get APP_API by name
 #APP_API=$(aws apigateway get-rest-apis | \
 #jq -r ".items[]  | select(.name == \"${APP_FN_NAME}\") | .id")
 
-APP_API_ROOT=$(aws apigateway get-resources \
---rest-api-id ${APP_API} | jq -r .items[0].id)
+APP_API_ROOT=$(aws apigateway get-resources --rest-api-id ${APP_API} | \
+jq -r .items[0].id)
 
-APP_API_RESOURCE=$(aws apigateway create-resource \
+APP_API_PROXY=$(aws apigateway create-resource \
 --rest-api-id ${APP_API} \
 --parent-id ${APP_API_ROOT} \
 --path-part "{proxy+}" | jq -r .id)
 
 aws apigateway put-method --rest-api-id ${APP_API} \
---resource-id ${APP_API_RESOURCE} --http-method ANY \
+--resource-id ${APP_API_ROOT} --http-method ANY \
+--authorization-type NONE
+
+aws apigateway put-method --rest-api-id ${APP_API} \
+--resource-id ${APP_API_PROXY} --http-method ANY \
 --authorization-type NONE
 
 APP_FN_ARN=$(aws lambda get-function \
 --function-name ${APP_FN_NAME} | jq -r .Configuration.FunctionArn)
 
-APP_REGION=eu-west-2
-
 aws apigateway put-integration --rest-api-id ${APP_API} \
---resource-id ${APP_API_RESOURCE} --http-method ANY --type AWS_PROXY \
+--resource-id ${APP_API_ROOT} --http-method ANY --type AWS \
 --integration-http-method POST \
 --uri arn:aws:apigateway:${APP_REGION}:lambda:path/2015-03-31/functions/${APP_FN_ARN}/invocations
+# aws apigateway get-integration --rest-api-id ${APP_API} --resource-id ${APP_API_ROOT} --http-method ANY
+
+aws apigateway put-integration --rest-api-id ${APP_API} \
+--resource-id ${APP_API_PROXY} --http-method ANY --type AWS_PROXY \
+--integration-http-method POST \
+--uri arn:aws:apigateway:${APP_REGION}:lambda:path/2015-03-31/functions/${APP_FN_ARN}/invocations
+# aws apigateway get-integration --rest-api-id ${APP_API} --resource-id ${APP_API_PROXY} --http-method ANY
 
 APP_FN_PERM=$(uuidgen)
 
@@ -118,7 +133,7 @@ ${APP_DIR}/config \
 -key "APP_API" -value "${APP_API}" \
 -key "APP_API_ROOT" -value "${APP_API_ROOT}" \
 -key "APP_API_ENDPOINT" -value "${APP_API_ENDPOINT}" \
--key "APP_API_RESOURCE" -value "${APP_API_RESOURCE}" \
+-key "APP_API_PROXY" -value "${APP_API_PROXY}" \
 -key "APP_FN_ARN" -value "${APP_FN_ARN}" \
 -key "APP_REGION" -value "${APP_REGION}" \
 -key "APP_FN_PERM" -value "${APP_FN_PERM}" \

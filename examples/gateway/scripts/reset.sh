@@ -22,6 +22,15 @@ then
     echo "Invalid APP_FN_NAME"
     exit ${E_BADARGS}
 fi
+APP_API_CUSTOM=${APP_API_CUSTOM}
+if [ "${APP_API_CUSTOM}" = "" ]
+then
+    echo "Invalid APP_API_CUSTOM"
+    exit ${E_BADARGS}
+fi
+
+APP_API_PATH=${APP_API_PATH}
+
 
 read -p "Delete lambda fn and API ${APP_FN_NAME} (y)? " -n 1 -r
 echo ""
@@ -57,6 +66,22 @@ then
         aws lambda delete-function --function-name ${APP_FN_NAME}
     fi
 
+    BASE_PATH=${APP_API_PATH}
+    if [ "${APP_API_PATH}" = "" ]
+    then
+        # Trying to delete an empty base path will error
+        BASE_PATH="(none)"
+    fi
+    DELETE_BASE_PATH=1
+    aws apigateway get-base-path-mapping --domain-name ${APP_API_CUSTOM} \
+    --base-path ${BASE_PATH} > /dev/null \
+    || DELETE_BASE_PATH=0
+    if [ ${DELETE_FN} -eq 1 ]
+    then
+        aws apigateway delete-base-path-mapping \
+        --domain-name ${APP_API_CUSTOM} --base-path ${BASE_PATH}
+    fi
+
     APP_API=$(aws apigateway get-rest-apis | \
     jq -r ".items[]  | select(.name == \"${APP_FN_NAME}\") | .id") \
     || APP_API=""
@@ -68,7 +93,6 @@ then
 
     echo "Reset config"
     cp ${APP_DIR}/config.sample.json ${APP_DIR}/config.json
-    # TODO Unset APP_ env vars
 
     echo ""
     echo "Done"

@@ -135,35 +135,46 @@ fi
 echo "Certificate is verified"
 
 # ..............................................................................
-echo "Create API domain"
-echo ""
-aws apigateway create-domain-name \
---domain-name ${APP_API_CUSTOM} \
---certificate-name ${APP_API_CUSTOM} \
---region ${APP_REGION} \
---certificate-arn ${APP_CERT_ARN}
-APP_API_TARGET=$(aws apigateway get-domain-name \
---domain-name ${APP_API_CUSTOM} | \
-jq -r .distributionDomainName)
+CREATE_API_DOMAIN=0
+aws apigateway get-domain-name --domain-name ${APP_API_CUSTOM} > /dev/null \
+|| CREATE_API_DOMAIN=1
+if [ ${CREATE_API_DOMAIN} -eq 1 ]
+then
+    echo "Create API domain"
+    echo ""
+    aws apigateway create-domain-name \
+    --domain-name ${APP_API_CUSTOM} \
+    --certificate-name ${APP_API_CUSTOM} \
+    --region ${APP_REGION} \
+    --certificate-arn ${APP_CERT_ARN}
+    APP_API_TARGET=$(aws apigateway get-domain-name \
+    --domain-name ${APP_API_CUSTOM} | \
+    jq -r .distributionDomainName)
+fi
 
 ## ..............................................................................
-echo "Create API path mapping"
-echo ""
-if [ "${APP_API_PATH}" != "" ]
+BASE_PATH=${APP_API_PATH}
+if [ "${APP_API_PATH}" = "" ]
 then
+    # Trying to delete an empty base path will error
+    BASE_PATH="(none)"
+fi
+# TODO Filter on base path when checking if mapping exists
+PATH_MAPPINGS=$(aws apigateway get-base-path-mappings \
+--domain-name ${APP_API_CUSTOM} | \
+jq ".items | length")
+if [ "${PATH_MAPPINGS}" = "0" ]
+then
+    echo "Create API path mapping"
+    echo ""
     aws apigateway create-base-path-mapping \
-    --base-path ${APP_API_PATH} \
-    --domain-name ${APP_API_CUSTOM} \
-    --rest-api-id ${APP_API} \
-    --stage ${APP_API_STAGE_NAME} \
-    --region ${APP_REGION}
-else
-    aws apigateway create-base-path-mapping \
+    --base-path ${BASE_PATH} \
     --domain-name ${APP_API_CUSTOM} \
     --rest-api-id ${APP_API} \
     --stage ${APP_API_STAGE_NAME} \
     --region ${APP_REGION}
 fi
+
 APP_API_CUSTOM_ENDPOINT="https://${APP_API_CUSTOM}${APP_API_PATH}"
 
 # ..............................................................................
