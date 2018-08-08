@@ -25,7 +25,7 @@ non-persistent disk space in its own /tmp directory..."
     export APP_DIR=${GOPATH}/src/github.com/mozey/aws-lambda-go/examples/gateway
     
     # net/http
-    go run ${APP_DIR}/cmd/http/http.go &
+    go run ${APP_DIR}/cmd/dev/dev.go &
     http localhost:8080
     http "localhost:8080/foo?foo=foo"
     
@@ -49,7 +49,7 @@ should be set in `config.json`
     cp ${APP_DIR}/config.sample.json ${APP_DIR}/config.json
     
     cd ${APP_DIR}
-    go build -ldflags "-X main.AppDir=${APP_DIR}" -o ./config ./scripts/config
+    go build -ldflags "-X main.AppDir=${APP_DIR}" -o ./config ./cmd/config
     
     ${APP_DIR}/config \
     -key APP_REGION -value eu-west-2 \
@@ -64,6 +64,10 @@ Print env
 Build the exe
 
     $(${APP_DIR}/config) && ${APP_DIR}/scripts/build.sh
+    
+Deploy to update the lambda fn
+    
+    $(${APP_DIR}/config) && ${APP_DIR}/scripts/deploy.sh
 
 Create lambda fn and API
 
@@ -76,11 +80,6 @@ Call API
     http ${APP_API_ENDPOINT}/foo?foo=foo
 
 
-# Deploy to update the lambda fn
-    
-    $(${APP_DIR}/config) && ${APP_DIR}/scripts/deploy.sh
-
-    
 # Delete lambda fn and API
 
     $(${APP_DIR}/config) && ${APP_DIR}/scripts/reset.sh

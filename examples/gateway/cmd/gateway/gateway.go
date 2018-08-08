@@ -7,9 +7,9 @@ import (
 )
 
 func main() {
-	internal.InitRoutes()
+	h := internal.NewRouter()
 	log.Print("Use net/http compatible wrapper around lambda.Start")
-	log.Fatal(gateway.ListenAndServe("", nil))
+	log.Fatal(gateway.ListenAndServe("", h))
 }
 
 

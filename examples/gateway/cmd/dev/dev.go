@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	internal.InitRoutes()
+	h := internal.NewRouter()
 	log.Print("Using only net/http")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", h))
 }

@@ -2,22 +2,21 @@ package internal
 
 import (
 	"net/http"
-	"log"
 	"encoding/json"
 	"fmt"
+	"github.com/mozey/logutil"
 )
 
 func Foo(w http.ResponseWriter, r *http.Request) {
-	log.Print("foo")
+	logutil.Debug("foo")
 	fooParam := r.URL.Query().Get("foo")
 	if fooParam == "" {
-		log.Print("Missing foo")
-		msg := Message{"Missing foo"}
+		logutil.Debug("Missing foo")
+		msg := Response{"Missing foo"}
 		json.NewEncoder(w).Encode(msg)
 		return
 	}
-	//msg := Message{fmt.Sprintf("%v bar", fooParam)}
-	msg := Message{fmt.Sprintf("%v baz", fooParam)}
+	msg := Response{fmt.Sprintf("foo: %v", fooParam)}
 	json.NewEncoder(w).Encode(msg)
 }
 
