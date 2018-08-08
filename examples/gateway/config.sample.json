@@ -1,7 +1,0 @@
-{
-    "APP_DEBUG": "true",
-    "APP_FN_NAME": "aws-lambda-go-examples-gateway",
-    "APP_FN_HANDLER": "gateway.out",
-    "APP_REGION": "eu-west-2",
-    "AWS_PROFILE": "YOUR_PROFILE_HERE"
-}
