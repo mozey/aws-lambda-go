@@ -78,7 +78,7 @@ match all request methods and paths
 
     export AWS_API_NAME=${AWS_FN_NAME}
     export AWS_API_ID=$(aws apigateway create-rest-api \
-    --name ${AWS_API_NAME} | jq -r .id)
+    --name ${AWS_FN_NAME} | jq -r .id)
     
     export AWS_API_ROOT_ID=$(aws apigateway get-resources \
     --rest-api-id ${AWS_API_ID} | jq -r .items[0].id)
@@ -128,14 +128,28 @@ View cloudwatch logs
     aws logs filter-log-events --log-group-name /aws/lambda/${AWS_FN_NAME} \
     --filter-pattern "ERROR"
     
-Deploying the API and invoke
+Deploying the API
 
     export AWS_STAGE_NAME=$(uuidgen)
 
     aws apigateway create-deployment --rest-api-id ${AWS_API_ID} \
     --stage-name ${AWS_STAGE_NAME}
     
+Set env given fn name 
+and invoke lambda fn
+
+    export AWS_PROFILE=YOUR_PROFILE_HERE
+    export AWS_FN_NAME="aws-lambda-go-examples-books-api"
+    
+    export AWS_API_ID=$(aws apigateway get-rest-apis | \
+    jq -r ".items[]  | select(.name == \"${AWS_FN_NAME}\") | .id")
+    export AWS_REGION=eu-west-2
+    export AWS_STAGE_NAME=$(aws apigateway get-stages \
+    --rest-api-id ${AWS_API_ID} | \
+    jq -r ".item[0].stageName")
+
     export AWS_ENDPOINT=https://${AWS_API_ID}.execute-api.${AWS_REGION}.amazonaws.com/${AWS_STAGE_NAME}
+    
     http ${AWS_ENDPOINT}/books?isbn=${AWS_ISBN}
     
 Reset to delete lambda fn and API created above
